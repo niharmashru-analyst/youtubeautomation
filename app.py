@@ -389,7 +389,8 @@ def youtube_flow(state=None):
         "redirect_uris":[redirect_uri]}}
     flow = Flow.from_client_config(client_config, scopes=[
         "https://www.googleapis.com/auth/youtube.upload",
-        "https://www.googleapis.com/auth/youtube.force-ssl"])
+        "https://www.googleapis.com/auth/youtube.force-ssl"],
+        autogenerate_code_verifier=True)
     flow.redirect_uri = redirect_uri
     return flow
 
@@ -399,6 +400,9 @@ def youtube_connect():
         flow = youtube_flow()
         auth_url, state = flow.authorization_url(access_type="offline", include_granted_scopes="true", prompt="consent")
         session["youtube_oauth_state"] = state
+        # PKCE verifier must survive the redirect and be restored on callback.
+        session["youtube_code_verifier"] = flow.code_verifier
+        session.modified = True
         return redirect(auth_url)
     except Exception as e:
         flash("YouTube connection setup: " + str(e), "error")
@@ -410,6 +414,10 @@ def youtube_callback():
         flow = youtube_flow()
         if request.args.get("state") != session.get("youtube_oauth_state"):
             raise RuntimeError("OAuth state mismatch. Please connect again.")
+        # The callback creates a new Flow object, so restore the verifier from the session.
+        flow.code_verifier = session.pop("youtube_code_verifier", None)
+        if not flow.code_verifier:
+            raise RuntimeError("OAuth PKCE verifier is missing. Please click Connect YouTube and authorize again.")
         flow.fetch_token(authorization_response=request.url)
         creds = flow.credentials
         token = {"token":creds.token,"refresh_token":creds.refresh_token,"token_uri":creds.token_uri,
