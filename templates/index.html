@@ -1,0 +1,15 @@
+{% extends "base.html" %}{% block content %}
+<section class="hero"><div><p class="eyebrow">CREATOR WORKSPACE</p><h1>Your audio.<br><span>Your video workflow.</span></h1><p>Transcribe with Gemini, prepare a Meta AI prompt, review the generated MP4, remember corrections, and publish to YouTube.</p></div>
+<div class="panel connect"><h3>YouTube channel</h3>{% if youtube_connected %}<p class="ok">✓ Connected</p>{% else %}<p>Connect your channel to publish videos.</p>{% endif %}<a class="button" href="{{ url_for('youtube_connect') }}">Connect YouTube</a></div></section>
+<section class="panel"><h2>Start a project</h2><form action="{{ url_for('create_project') }}" method="post" enctype="multipart/form-data" class="formgrid">
+<label class="wide">Audio file <input type="file" name="audio" accept=".mp3,.wav,.m4a,.aac,.ogg,.flac,.mp4" required></label>
+<label>Aspect ratio<select name="ratio"><option value="9:16">9:16 — Shorts / Reels</option><option value="16:9">16:9 — YouTube landscape</option><option value="1:1">1:1 — Square</option></select></label>
+<label>Language<select name="language"><option>Hindi / Hinglish</option><option>Gujarati</option><option>English</option><option>Auto-detect</option></select></label>
+<label>Platform<select name="platform"><option>YouTube Shorts</option><option>YouTube Long Video</option><option>Instagram Reels</option><option>Facebook Reels</option><option>Multiple platforms</option></select></label>
+<label>Visual style<select name="style"><option>Cinematic slideshow</option><option>Faceless typography</option><option>Animated illustrations</option><option>Educational infographic</option></select></label>
+<div class="wide"><button type="submit">Upload audio & start →</button></div></form></section>
+<section class="panel"><h2>Creator Memory</h2><p class="muted">Rules are inserted into future prompts. Save only durable preferences here.</p>
+<form action="{{ url_for('memory_add') }}" method="post" class="inlineform"><input name="rule" placeholder="e.g. Always use large mobile-readable text" required><select name="category"><option value="preference">Permanent preference</option><option value="quality-rule">Quality rule</option><option value="avoid">Avoid this</option></select><button type="submit">Save rule</button></form>
+<div class="memorylist">{% for m in memories %}<div class="memory"><span>{{ m.rule }}</span><form method="post" action="{{ url_for('memory_toggle', mid=m.id) }}"><button class="small secondary" type="submit">{% if m.active %}Disable{% else %}Enable{% endif %}</button></form></div>{% else %}<p class="muted">No rules saved yet.</p>{% endfor %}</div></section>
+<section class="panel"><h2>Recent projects</h2>{% for p in projects %}<a class="projectrow" href="{{ url_for('project_detail', pid=p.id) }}"><span><strong>{{ p.name }}</strong><small>{{ p.created_at }} · {{ p.ratio }}</small></span><span class="status">{{ p.status }}</span></a>{% else %}<p class="muted">Your projects will appear here.</p>{% endfor %}</section>
+{% endblock %}
